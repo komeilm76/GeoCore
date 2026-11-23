@@ -5,24 +5,55 @@ import vtPbf from "vt-pbf";
 import type { FeatureCollection } from "geojson";
 import { z } from "zod";
 
-function parseFeatureCollection(value: unknown): FeatureCollection {
-  if (
-    typeof value !== "object" ||
-    value === null ||
-    !("type" in value) ||
-    !("features" in value) ||
-    value.type !== "FeatureCollection" ||
-    !Array.isArray(value.features)
-  ) {
-    throw new TypeError("the checked-in synthetic fixture must be a GeoJSON FeatureCollection");
-  }
-  // The fixture is checked in and its member geometry/IDs are exercised by tests;
-  // this assertion only bridges the top-level JSON.parse value to GeoJSON's type.
-  return value as FeatureCollection;
+const PositionSchema = z.array(z.number()).min(2);
+const LinearRingSchema = z
+  .array(PositionSchema)
+  .min(4)
+  .refine((ring) => {
+    const first = ring[0];
+    const last = ring.at(-1);
+    return (
+      first !== undefined &&
+      last !== undefined &&
+      first.length === last.length &&
+      first.every((ordinate, index) => ordinate === last[index])
+    );
+  }, "polygon rings must be closed");
+
+const GeometrySchema = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("Point"), coordinates: PositionSchema }).strict(),
+  z.object({ type: z.literal("LineString"), coordinates: z.array(PositionSchema).min(2) }).strict(),
+  z.object({ type: z.literal("Polygon"), coordinates: z.array(LinearRingSchema).min(1) }).strict(),
+  z
+    .object({
+      type: z.literal("MultiPolygon"),
+      coordinates: z.array(z.array(LinearRingSchema).min(1)).min(1),
+    })
+    .strict(),
+]);
+
+const SyntheticFeatureCollectionSchema = z
+  .object({
+    type: z.literal("FeatureCollection"),
+    features: z.array(
+      z
+        .object({
+          type: z.literal("Feature"),
+          id: z.union([z.string(), z.number()]).optional(),
+          properties: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).nullable(),
+          geometry: GeometrySchema,
+        })
+        .strict(),
+    ),
+  })
+  .strict();
+
+export function parseSyntheticFixture(value: unknown): FeatureCollection {
+  return SyntheticFeatureCollectionSchema.parse(value);
 }
 
 const fixturePath = new URL("../fixtures/synthetic.geojson", import.meta.url);
-const parsedFixture: FeatureCollection = parseFeatureCollection(
+const parsedFixture: FeatureCollection = parseSyntheticFixture(
   JSON.parse(readFileSync(fileURLToPath(fixturePath), "utf8")) as unknown,
 );
 

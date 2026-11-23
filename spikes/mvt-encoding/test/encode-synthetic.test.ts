@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { VectorTile, type VectorTileFeature, type VectorTileLayer } from "@mapbox/vector-tile";
 import { PbfReader } from "pbf";
 import { ZodError } from "zod";
-import { encodeSyntheticTile, loadSyntheticFixture } from "../src/encode-synthetic";
+import { encodeSyntheticTile, loadSyntheticFixture, parseSyntheticFixture } from "../src/encode-synthetic";
 
 function decode(bytes: Uint8Array): VectorTile {
   expect(bytes.byteLength).toBeGreaterThan(0);
@@ -265,6 +265,24 @@ describe("synthetic MVT candidate encode/decode", () => {
       "Point",
       "Polygon",
     ]);
+  });
+
+  it("rejects an open polygon ring in a synthetic fixture with Zod", () => {
+    const malformedFixture = {
+      type: "FeatureCollection",
+      features: [
+        {
+          type: "Feature",
+          id: 1,
+          properties: { is_synthetic: true },
+          geometry: {
+            type: "Polygon",
+            coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1]]],
+          },
+        },
+      ],
+    };
+    expect(() => parseSyntheticFixture(malformedFixture)).toThrow(ZodError);
   });
 
   it("rejects invalid or out-of-range tile coordinates with Zod", () => {
