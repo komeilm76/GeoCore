@@ -1,0 +1,42 @@
+name: Documentation and spike checks
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  docs-and-spikes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python for documentation checks
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate documentation structure
+        run: python scripts/check_docs.py
+      - name: Test documentation checker
+        run: python -m unittest discover -s tests -v
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.4.5"
+      - name: Install and check tile-matrix spike
+        run: bun install --frozen-lockfile && bun run check
+        working-directory: spikes/tile-matrix
+      - name: Install and check MVT encode/decode spike
+        run: bun install --frozen-lockfile && bun run check
+        working-directory: spikes/mvt-encoding
+      - name: Audit MVT spike production dependencies
+        run: bun run audit
+        working-directory: spikes/mvt-encoding
+      - name: Install and check Fastify + Zod compatibility spike
+        run: bun install --frozen-lockfile && bun run check
+        working-directory: spikes/api-stack-compat
+      - name: Audit API stack spike production dependencies
+        run: bun run audit
+        working-directory: spikes/api-stack-compat

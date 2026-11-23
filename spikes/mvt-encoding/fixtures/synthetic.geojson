@@ -1,0 +1,65 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": 101,
+      "properties": {
+        "kind": "poi",
+        "name:en": "Synthetic point",
+        "name:fa": "نقطه آزمایشی",
+        "actual_language": "en",
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [10, -10]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 202,
+      "properties": {
+        "kind": "route_sample",
+        "name:en": "Synthetic line",
+        "name:fa": "خط آزمایشی",
+        "actual_language": "en",
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[5, -5], [10, -15], [25, -20]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 404,
+      "properties": {
+        "kind": "boundary_sample",
+        "name:en": "Synthetic boundary-crossing line",
+        "name:fa": "خط آزمایشی عبوری از مرز",
+        "actual_language": "en",
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[80, -10], [100, -10]]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": 303,
+      "properties": {
+        "kind": "area_sample",
+        "name:en": "Synthetic polygon",
+        "name:fa": "چندضلعی آزمایشی",
+        "actual_language": "fa",
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[5, -5], [15, -5], [15, -15], [5, -15], [5, -5]]]
+      }
+    }
+  ]
+}
