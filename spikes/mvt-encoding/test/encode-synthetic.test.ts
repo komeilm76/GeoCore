@@ -272,6 +272,13 @@ describe("synthetic MVT candidate encode/decode", () => {
     expect(validateStyleMin(invalidStyle).length).toBeGreaterThan(0);
   });
 
+  it("keeps the complete synthetic fixture in a candidate z-zero world tile", () => {
+    const layer = requiredLayer(decode(encodeSyntheticTile({ z: 0, x: 0, y: 0 })));
+    expect(Array.from({ length: layer.length }, (_, index) => layer.feature(index).id).sort((a, b) => {
+      return (a ?? -1) - (b ?? -1);
+    })).toEqual([101, 202, 303, 404, 505, 606, 707, 808, 909]);
+  });
+
   it("encodes the same synthetic tile deterministically", () => {
     expect(encodeSyntheticTile()).toEqual(encodeSyntheticTile());
   });
