@@ -63,6 +63,24 @@
     },
     {
       "type": "Feature",
+      "id": 606,
+      "properties": {
+        "kind": "boundary_area_with_hole_sample",
+        "name:en": "Synthetic boundary-crossing polygon with a hole",
+        "name:fa": "چندضلعی آزمایشی مرزی با حفره",
+        "actual_language": "en",
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [[80, -25], [100, -25], [100, -35], [80, -35], [80, -25]],
+          [[84, -28], [84, -32], [88, -32], [88, -28], [84, -28]]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
       "id": 303,
       "properties": {
         "kind": "area_sample",
