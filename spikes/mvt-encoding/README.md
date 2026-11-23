@@ -4,7 +4,7 @@
 
 ## What it tests
 
-A small checked-in synthetic GeoJSON FeatureCollection with point, line and polygon features is sliced with `geojson-vt`, encoded with `vt-pbf`, and decoded back with `@mapbox/vector-tile` and `pbf`. Tests verify layer metadata, geometry types, numeric feature IDs, English/Persian UTF-8 properties, a synthetic-data marker, and clipping of a line and polygon across neighboring XYZ tiles. Invalid tile coordinate ranges are rejected.
+A small checked-in synthetic GeoJSON FeatureCollection with point, line, polygon and multipolygon features is sliced with `geojson-vt`, encoded with `vt-pbf`, and decoded back with `@mapbox/vector-tile` and `pbf`. Tests verify layer metadata, geometry types, numeric feature IDs, English/Persian UTF-8 properties, a synthetic-data marker, line and polygon clipping across neighboring XYZ columns and rows, one bounded hole/multipolygon case, candidate zoom placement, and rejection of invalid/out-of-range tile coordinates.
 
 ## Run
 

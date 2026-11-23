@@ -268,8 +268,11 @@ describe("synthetic MVT candidate encode/decode", () => {
 
   it("rejects invalid or out-of-range tile coordinates", () => {
     expect(() => encodeSyntheticTile({ z: -1, x: 0, y: 0 })).toThrow(RangeError);
+    expect(() => encodeSyntheticTile({ z: 9, x: 0, y: 0 })).toThrow(RangeError);
     expect(() => encodeSyntheticTile({ z: 2, x: 4, y: 0 })).toThrow(RangeError);
+    expect(() => encodeSyntheticTile({ z: 2, x: 1.5, y: 0 })).toThrow(RangeError);
     expect(() => encodeSyntheticTile({ z: 2, x: 0, y: 4 })).toThrow(RangeError);
+    expect(() => encodeSyntheticTile({ z: 2, x: 0, y: 1.5 })).toThrow(RangeError);
     expect(() => encodeSyntheticTile({ z: 2.5, x: 0, y: 0 })).toThrow(RangeError);
   });
 });
