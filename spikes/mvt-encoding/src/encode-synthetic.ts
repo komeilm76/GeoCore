@@ -40,7 +40,7 @@ const SyntheticFeatureCollectionSchema = z
         .object({
           type: z.literal("Feature"),
           id: z.union([z.string(), z.number()]).optional(),
-          properties: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).nullable(),
+          properties: z.record(z.string(), z.json()).nullable(),
           geometry: GeometrySchema,
         })
         .strict(),

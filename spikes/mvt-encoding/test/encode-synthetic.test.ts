@@ -267,6 +267,23 @@ describe("synthetic MVT candidate encode/decode", () => {
     ]);
   });
 
+  it("accepts nested JSON properties in the synthetic fixture schema", () => {
+    const fixture = loadSyntheticFixture();
+    const nestedProperties = { source: "synthetic", tags: ["north", "sample"], optional: null };
+    const fixtureWithNestedProperties = {
+      ...fixture,
+      features: fixture.features.map((feature) =>
+        feature.id === 101
+          ? { ...feature, properties: { ...feature.properties, metadata: nestedProperties } }
+          : feature,
+      ),
+    };
+    const parsed = parseSyntheticFixture(fixtureWithNestedProperties);
+    const point = parsed.features.find((feature) => feature.id === 101);
+
+    expect(point?.properties?.metadata).toEqual(nestedProperties);
+  });
+
   it("rejects an open polygon ring in a synthetic fixture with Zod", () => {
     const malformedFixture = {
       type: "FeatureCollection",
