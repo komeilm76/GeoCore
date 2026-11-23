@@ -31,7 +31,7 @@ jobs:
       - name: Install and check MVT encode/decode spike
         run: bun install --frozen-lockfile && bun run check
         working-directory: spikes/mvt-encoding
-      - name: Audit MVT spike production dependencies
+      - name: Audit MVT spike full dependency tree
         run: bun run audit
         working-directory: spikes/mvt-encoding
       - name: Install and check Fastify + Zod compatibility spike

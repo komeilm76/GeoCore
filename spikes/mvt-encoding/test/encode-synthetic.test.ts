@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { VectorTile, type VectorTileFeature, type VectorTileLayer } from "@mapbox/vector-tile";
 import { PbfReader } from "pbf";
+import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
+import { syntheticCandidateStyle } from "../fixtures/synthetic-style";
 import { encodeSyntheticTile, loadSyntheticFixture } from "../src/encode-synthetic";
 
 function decode(bytes: Uint8Array): VectorTile {
@@ -81,6 +83,38 @@ describe("synthetic MVT candidate encode/decode", () => {
     expect(eastRing[0]).toEqual(eastRing.at(-1));
     expect(westRing.every(([longitude]) => longitude >= 0 && longitude <= 90.0001)).toBe(true);
     expect(eastRing.every(([longitude]) => longitude >= 89.9999 && longitude <= 180)).toBe(true);
+  });
+
+  it("validates a candidate MapLibre style and its source-layer against the encoded tile", () => {
+    expect(validateStyleMin(syntheticCandidateStyle)).toEqual([]);
+
+    const mvtLayer = requiredLayer(decode(encodeSyntheticTile()));
+    const sourceLayers = syntheticCandidateStyle.layers.filter(
+      (layer) => "source" in layer && layer.source === "synthetic",
+    );
+    expect(sourceLayers).toHaveLength(4);
+    expect(
+      sourceLayers.every((layer) => "source-layer" in layer && layer["source-layer"] === mvtLayer.name),
+    ).toBe(true);
+
+    const labelLayer = sourceLayers.find((layer) => layer.type === "symbol");
+    if (!labelLayer || labelLayer.type !== "symbol") {
+      throw new Error("expected a candidate symbol layer");
+    }
+    expect(labelLayer.layout["text-field"]).toEqual([
+      "coalesce",
+      ["get", "name:fa"],
+      ["get", "name:en"],
+    ]);
+    expect(featureById(mvtLayer, 101).properties["name:fa"]).toBe("نقطه آزمایشی");
+    expect(featureById(mvtLayer, 101).properties["name:en"]).toBe("Synthetic point");
+  });
+
+  it("reports errors for an invalid candidate style version", () => {
+    const invalidStyle = { ...syntheticCandidateStyle, version: 99 } as unknown as Parameters<
+      typeof validateStyleMin
+    >[0];
+    expect(validateStyleMin(invalidStyle).length).toBeGreaterThan(0);
   });
 
   it("encodes the same synthetic tile deterministically", () => {

@@ -35,7 +35,7 @@ Additional Persian records: [owner-provided decision record](global/PRODUCT-DECI
 - [MVT encode/decode spike (EN)](../spikes/mvt-encoding/README.md) · [فارسی](../spikes/mvt-encoding/README.fa.md): isolated synthetic payload candidate test; uses pinned spike-only dependencies and does not select a product contract.
 - [Fastify + Zod compatibility spike (EN)](../spikes/api-stack-compat/README.md) · [فارسی](../spikes/api-stack-compat/README.fa.md): checks the owner-directed API tooling combination in process only; not a GeoCore endpoint or approved production adapter.
 
-The spikes use strict TypeScript, Bun 1.4.5 and Vitest 5.1.1. In each spike directory run `bun install --frozen-lockfile` and `bun run check`. In packages with an `audit` script, also run `bun run audit` when reviewing locked production dependencies. The committed Bun lockfiles are authoritative; these experiments are not production services.
+The spikes use strict TypeScript, Bun 1.4.5 and Vitest 5.1.1. In each spike directory run `bun install --frozen-lockfile` and `bun run check`. In packages with an `audit` script, also run `bun run audit`; check each package's README to see whether the command audits production-only or all locked dependencies. The committed Bun lockfiles are authoritative; these experiments are not production services.
 
 ## Service manuals / راهنماهای سرویس
 

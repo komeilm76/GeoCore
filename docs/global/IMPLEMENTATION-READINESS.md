@@ -7,7 +7,7 @@
 - **Safe to start now:** non-production feasibility spikes, synthetic test-data fixtures, written API/format options, benchmark plans, threat-model review, license/legal assessment planning, and assigning owners.
 - **Not ready for production data or release:** tile format/zoom/coverage and data pipeline are unresolved; both hosting models and public/private access need tested designs; Routing requires both OSRM and Valhalla but their capability parity is unverified; legal/privacy and operational owners remain unnamed; targets and support policy remain open.
 - **Real people's location:** do not collect or process before scenario-specific legal/privacy review. Use authorized synthetic or otherwise approved test data.
-- **Workspace capability check (2026-11-16):** Bun 1.4.5, Node.js 22.22.3, npm and Python 3.11 are available; pnpm, Docker/Podman, OSRM and Valhalla executables were not found. The matrix and synthetic MVT spikes now use strict TypeScript and Vitest under Bun; they are not production services. No authorized real tile/network dataset or production tile pipeline is present, and the dual-engine comparison cannot yet be executed here. This check is not an assessment of engine capability.
+- **Workspace capability check (2026-11-16):** Bun 1.4.5, Node.js 22.22.3, npm and Python 3.11 are available; pnpm, Docker/Podman, OSRM and Valhalla executables were not found. The matrix and synthetic MVT spikes now use strict TypeScript and Vitest under Bun; they are not production services. No Chromium/Chrome or Playwright executable was found, so no browser MapLibre rendering has been run. No authorized real tile/network dataset or production tile pipeline is present, and the dual-engine comparison cannot yet be executed here. This check is not an assessment of engine capability.
 
 ## Common start gate for any code work
 
@@ -31,7 +31,7 @@ A spike must be isolated from production, use approved test data, have a written
 
 **Input:** only a small, authorized, versioned test fixture. The five focus cities are the planned quality sample; exact extents and reference data still need approval. Synthetic geometry may be used for protocol tests before a licensed OSM extract is approved.
 
-**Work already completed:** an isolated XYZ/TMS matrix-math spike and a synthetic MVT encode/decode candidate test now pass. These verify only coordinate arithmetic, a synthetic library round-trip and limited line/polygon clipping in neighboring test tiles; they do not select MVT, test MapLibre rendering, real OSM, deployment, authorization or production behavior. See the spike guides and proposed ADR-0001.
+**Work already completed:** an isolated XYZ/TMS matrix-math spike and a synthetic MVT encode/decode candidate test now pass. These verify only coordinate arithmetic, a synthetic library round-trip, limited line/polygon clipping in neighboring test tiles, and a candidate style-spec schema/property-name check; they do not select MVT, render in MapLibre, test real OSM, deployment, authorization or production behavior. The style-spec package has an unresolved license-metadata discrepancy; qualified review is required before adoption. See the spike guides and proposed ADR-0001.
 
 **Exit evidence:** decision table and prototype report; chosen matrix/format proposal; Persian/English rendering and cache-isolation test; reproducible data build; measured size and resource use; legal/data review; explicit remaining risks. Product owner/technical/security/data approvals are required before implementation is treated as production-bound.
 
