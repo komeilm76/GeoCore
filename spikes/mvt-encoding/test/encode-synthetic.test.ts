@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { VectorTile, type VectorTileFeature, type VectorTileLayer } from "@mapbox/vector-tile";
 import { PbfReader } from "pbf";
-import { validateStyleMin } from "@maplibre/maplibre-gl-style-spec";
+import { validateStyleMin, type StyleSpecification } from "@maplibre/maplibre-gl-style-spec";
 import { syntheticCandidateStyle } from "../fixtures/synthetic-style";
 import { encodeSyntheticTile, loadSyntheticFixture } from "../src/encode-synthetic";
 
@@ -22,6 +22,30 @@ function featureById(layer: VectorTileLayer, id: number): VectorTileFeature {
     if (feature.id === id) return feature;
   }
   throw new Error(`expected feature ${id}`);
+}
+
+function collectGetProperties(value: unknown, output: Set<string>): void {
+  if (Array.isArray(value)) {
+    if (value[0] === "get" && typeof value[1] === "string") output.add(value[1]);
+    for (const child of value) collectGetProperties(child, output);
+  } else if (typeof value === "object" && value !== null) {
+    for (const child of Object.values(value)) collectGetProperties(child, output);
+  }
+}
+
+function unresolvedStyleProperties(style: StyleSpecification, layer: VectorTileLayer): string[] {
+  const available = new Set<string>();
+  for (let index = 0; index < layer.length; index += 1) {
+    for (const key of Object.keys(layer.feature(index).properties)) available.add(key);
+  }
+
+  const referenced = new Set<string>();
+  for (const styleLayer of style.layers) {
+    if ("source-layer" in styleLayer && styleLayer["source-layer"] === layer.name) {
+      collectGetProperties(styleLayer, referenced);
+    }
+  }
+  return [...referenced].filter((property) => !available.has(property)).sort();
 }
 
 describe("synthetic MVT candidate encode/decode", () => {
@@ -89,6 +113,7 @@ describe("synthetic MVT candidate encode/decode", () => {
     expect(validateStyleMin(syntheticCandidateStyle)).toEqual([]);
 
     const mvtLayer = requiredLayer(decode(encodeSyntheticTile()));
+    expect(unresolvedStyleProperties(syntheticCandidateStyle, mvtLayer)).toEqual([]);
     const sourceLayers = syntheticCandidateStyle.layers.filter(
       (layer) => "source" in layer && layer.source === "synthetic",
     );
@@ -108,6 +133,22 @@ describe("synthetic MVT candidate encode/decode", () => {
     ]);
     expect(featureById(mvtLayer, 101).properties["name:fa"]).toBe("نقطه آزمایشی");
     expect(featureById(mvtLayer, 101).properties["name:en"]).toBe("Synthetic point");
+  });
+
+  it("detects style property references missing from the encoded tile", () => {
+    const invalidPropertyStyle = {
+      ...syntheticCandidateStyle,
+      layers: syntheticCandidateStyle.layers.map((layer) =>
+        layer.id === "synthetic-label" && layer.type === "symbol"
+          ? { ...layer, layout: { ...layer.layout, "text-field": ["get", "name:missing"] } }
+          : layer,
+      ),
+    } as unknown as StyleSpecification;
+    const mvtLayer = requiredLayer(decode(encodeSyntheticTile()));
+
+    // The style schema accepts arbitrary feature-property names; tile/style consistency is a separate check.
+    expect(validateStyleMin(invalidPropertyStyle)).toEqual([]);
+    expect(unresolvedStyleProperties(invalidPropertyStyle, mvtLayer)).toEqual(["name:missing"]);
   });
 
   it("reports errors for an invalid candidate style version", () => {
