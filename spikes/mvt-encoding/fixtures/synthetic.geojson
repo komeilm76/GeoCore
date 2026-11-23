@@ -99,6 +99,21 @@
     },
     {
       "type": "Feature",
+      "id": 808,
+      "properties": {
+        "kind": "horizontal_boundary_sample",
+        "name:en": "Synthetic north-south tile-boundary line",
+        "name:fa": "خط آزمایشی مرزی شمالی جنوبی",
+        "actual_language": "en",
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [[20, 5], [20, -5]]
+      }
+    },
+    {
+      "type": "Feature",
       "id": 303,
       "properties": {
         "kind": "area_sample",
