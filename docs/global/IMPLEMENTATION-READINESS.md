@@ -31,7 +31,7 @@ A spike must be isolated from production, use approved test data, have a written
 
 **Input:** only a small, authorized, versioned test fixture. The five focus cities are the planned quality sample; exact extents and reference data still need approval. Synthetic geometry may be used for protocol tests before a licensed OSM extract is approved.
 
-**Work already completed:** an isolated XYZ/TMS matrix-math spike and a synthetic MVT encode/decode candidate test now pass. These verify only coordinate arithmetic and a library round-trip; they do not select MVT, test MapLibre rendering, OSM, deployment, authorization or production behavior. See the spike guides and proposed ADR-0001.
+**Work already completed:** an isolated XYZ/TMS matrix-math spike and a synthetic MVT encode/decode candidate test now pass. These verify only coordinate arithmetic, a synthetic library round-trip and limited line/polygon clipping in neighboring test tiles; they do not select MVT, test MapLibre rendering, real OSM, deployment, authorization or production behavior. See the spike guides and proposed ADR-0001.
 
 **Exit evidence:** decision table and prototype report; chosen matrix/format proposal; Persian/English rendering and cache-isolation test; reproducible data build; measured size and resource use; legal/data review; explicit remaining risks. Product owner/technical/security/data approvals are required before implementation is treated as production-bound.
 

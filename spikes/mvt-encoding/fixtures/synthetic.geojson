@@ -48,6 +48,21 @@
     },
     {
       "type": "Feature",
+      "id": 505,
+      "properties": {
+        "kind": "boundary_area_sample",
+        "name:en": "Synthetic boundary-crossing polygon",
+        "name:fa": "چندضلعی آزمایشی عبوری از مرز",
+        "actual_language": "en",
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[80, -5], [100, -5], [100, -15], [80, -15], [80, -5]]]
+      }
+    },
+    {
+      "type": "Feature",
       "id": 303,
       "properties": {
         "kind": "area_sample",
