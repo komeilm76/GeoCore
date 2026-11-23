@@ -48,6 +48,18 @@ function unresolvedStyleProperties(style: StyleSpecification, layer: VectorTileL
   return [...referenced].filter((property) => !available.has(property)).sort();
 }
 
+function candidateTileBounds(z: number, x: number, y: number) {
+  const tileCount = 2 ** z;
+  const latitudeAtRow = (row: number) =>
+    (Math.atan(Math.sinh(Math.PI * (1 - (2 * row) / tileCount))) * 180) / Math.PI;
+  return {
+    west: (x / tileCount) * 360 - 180,
+    east: ((x + 1) / tileCount) * 360 - 180,
+    south: latitudeAtRow(y + 1),
+    north: latitudeAtRow(y),
+  };
+}
+
 describe("synthetic MVT candidate encode/decode", () => {
   it("runs Vitest with Bun as the JavaScript runtime", () => {
     expect(process.versions.bun).toBeDefined();
@@ -277,6 +289,26 @@ describe("synthetic MVT candidate encode/decode", () => {
     expect(Array.from({ length: layer.length }, (_, index) => layer.feature(index).id).sort((a, b) => {
       return (a ?? -1) - (b ?? -1);
     })).toEqual([101, 202, 303, 404, 505, 606, 707, 808, 909]);
+  });
+
+  it("keeps a synthetic point within its candidate tile at two zoom levels", () => {
+    for (const { z, x, y } of [
+      { z: 1, x: 1, y: 1 },
+      { z: 3, x: 4, y: 4 },
+    ]) {
+      const layer = requiredLayer(decode(encodeSyntheticTile({ z, x, y })));
+      const point = featureById(layer, 101);
+      const geometry = point.toGeoJSON(x, y, z).geometry;
+      const bounds = candidateTileBounds(z, x, y);
+
+      if (geometry?.type !== "Point") throw new Error("expected the synthetic point to decode as a point");
+      const [longitude, latitude] = geometry.coordinates;
+      expect(longitude).toBeGreaterThanOrEqual(bounds.west);
+      expect(longitude).toBeLessThanOrEqual(bounds.east);
+      expect(latitude).toBeGreaterThanOrEqual(bounds.south);
+      expect(latitude).toBeLessThanOrEqual(bounds.north);
+      expect(point.properties["name:en"]).toBe("Synthetic point");
+    }
   });
 
   it("encodes the same synthetic tile deterministically", () => {
