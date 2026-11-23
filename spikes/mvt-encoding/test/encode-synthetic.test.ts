@@ -58,11 +58,11 @@ describe("synthetic MVT candidate encode/decode", () => {
     const layer = requiredLayer(tile);
     expect(layer.version).toBe(2);
     expect(layer.extent).toBe(4096);
-    expect(layer.length).toBe(8);
+    expect(layer.length).toBe(9);
 
     const features = Array.from({ length: layer.length }, (_, index) => layer.feature(index));
     expect(features.map((feature) => feature.id ?? -1).sort((a, b) => a - b)).toEqual([
-      101, 202, 303, 404, 505, 606, 707, 808,
+      101, 202, 303, 404, 505, 606, 707, 808, 909,
     ]);
     expect(
       features
@@ -74,6 +74,7 @@ describe("synthetic MVT candidate encode/decode", () => {
       "LineString",
       "MultiPolygon",
       "Point",
+      "Polygon",
       "Polygon",
       "Polygon",
       "Polygon",
@@ -114,6 +115,30 @@ describe("synthetic MVT candidate encode/decode", () => {
     );
     expect(northGeometry.coordinates.some(([, latitude]) => Math.abs(latitude) <= 0.01)).toBe(true);
     expect(southGeometry.coordinates.some(([, latitude]) => Math.abs(latitude) <= 0.01)).toBe(true);
+  });
+
+  it("clips and closes a polygon crossing the boundary between neighboring XYZ rows", () => {
+    const northLayer = requiredLayer(decode(encodeSyntheticTile({ z: 2, x: 2, y: 1 })));
+    const southLayer = requiredLayer(decode(encodeSyntheticTile({ z: 2, x: 2, y: 2 })));
+    const northGeometry = featureById(northLayer, 909).toGeoJSON(2, 1, 2).geometry;
+    const southGeometry = featureById(southLayer, 909).toGeoJSON(2, 2, 2).geometry;
+
+    if (northGeometry?.type !== "Polygon" || southGeometry?.type !== "Polygon") {
+      throw new Error("expected the row-boundary fixture to decode as polygons");
+    }
+    const northRing = northGeometry.coordinates[0];
+    const southRing = southGeometry.coordinates[0];
+    expect(northRing).toBeDefined();
+    expect(southRing).toBeDefined();
+    for (const ring of [northRing, southRing]) {
+      expect(ring.length).toBeGreaterThanOrEqual(4);
+      expect(ring[0]).toEqual(ring.at(-1));
+      expect(ring.every(([longitude]) => longitude >= 29.99 && longitude <= 40.01)).toBe(true);
+    }
+    expect(northRing.every(([, latitude]) => latitude >= -0.01 && latitude <= 5.01)).toBe(true);
+    expect(southRing.every(([, latitude]) => latitude >= -5.01 && latitude <= 0.01)).toBe(true);
+    expect(northRing.some(([, latitude]) => Math.abs(latitude) <= 0.01)).toBe(true);
+    expect(southRing.some(([, latitude]) => Math.abs(latitude) <= 0.01)).toBe(true);
   });
 
   it("clips and closes a synthetic polygon crossing the boundary in both tiles", () => {
@@ -258,7 +283,7 @@ describe("synthetic MVT candidate encode/decode", () => {
   it("keeps the fixture explicit, valid GeoJSON and synthetic", () => {
     const fixture = loadSyntheticFixture();
     expect(fixture.type).toBe("FeatureCollection");
-    expect(fixture.features).toHaveLength(8);
+    expect(fixture.features).toHaveLength(9);
     expect(fixture.features.every((feature) => feature.properties?.is_synthetic === true)).toBe(true);
     expect([...new Set(fixture.features.map((feature) => feature.geometry?.type))].sort()).toEqual([
       "LineString",

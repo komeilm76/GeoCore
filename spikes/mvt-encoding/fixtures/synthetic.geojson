@@ -114,6 +114,21 @@
     },
     {
       "type": "Feature",
+      "id": 909,
+      "properties": {
+        "kind": "horizontal_boundary_area_sample",
+        "name:en": "Synthetic polygon crossing a tile-row boundary",
+        "name:fa": "چندضلعی آزمایشی عبوری از مرز ردیف کاشی",
+        "actual_language": "en",
+        "is_synthetic": true
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[30, 5], [40, 5], [40, -5], [30, -5], [30, 5]]]
+      }
+    },
+    {
+      "type": "Feature",
       "id": 303,
       "properties": {
         "kind": "area_sample",
