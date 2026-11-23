@@ -173,6 +173,15 @@ describe("synthetic MVT candidate encode/decode", () => {
     expect(outerRing).toBeDefined();
     expect(holeRing).toBeDefined();
     expect(holeRing.every(([longitude]) => longitude >= 83.99 && longitude <= 88.01)).toBe(true);
+    expect(holeRing.every(([, latitude]) => latitude >= -32.01 && latitude <= -27.99)).toBe(true);
+
+    const signedArea = (ring: typeof outerRing) =>
+      ring.slice(0, -1).reduce((area, [longitude, latitude], index) => {
+        const next = ring[index + 1];
+        if (!next) throw new Error("expected a closed polygon ring");
+        return area + longitude * next[1]! - next[0]! * latitude;
+      }, 0);
+    expect(Math.sign(signedArea(outerRing))).toBe(-Math.sign(signedArea(holeRing)));
   });
 
   it("clips a multipolygon feature across neighboring tiles and preserves its separate component", () => {
