@@ -58,17 +58,17 @@ describe("synthetic MVT candidate encode/decode", () => {
     const layer = requiredLayer(tile);
     expect(layer.version).toBe(2);
     expect(layer.extent).toBe(4096);
-    expect(layer.length).toBe(6);
+    expect(layer.length).toBe(7);
 
     const features = Array.from({ length: layer.length }, (_, index) => layer.feature(index));
     expect(features.map((feature) => feature.id ?? -1).sort((a, b) => a - b)).toEqual([
-      101, 202, 303, 404, 505, 606,
+      101, 202, 303, 404, 505, 606, 707,
     ]);
     expect(
       features
         .map((feature) => feature.toGeoJSON(2, 2, 2).geometry?.type)
         .sort(),
-    ).toEqual(["LineString", "LineString", "Point", "Polygon", "Polygon", "Polygon"]);
+    ).toEqual(["LineString", "LineString", "MultiPolygon", "Point", "Polygon", "Polygon", "Polygon"]);
 
     expect(featureById(layer, 101).properties["name:fa"]).toBe("نقطه آزمایشی");
     expect(featureById(layer, 303).properties.actual_language).toBe("fa");
@@ -136,6 +136,40 @@ describe("synthetic MVT candidate encode/decode", () => {
     expect(holeRing.every(([longitude]) => longitude >= 83.99 && longitude <= 88.01)).toBe(true);
   });
 
+  it("clips a multipolygon feature across neighboring tiles and preserves its separate component", () => {
+    const westLayer = requiredLayer(decode(encodeSyntheticTile({ z: 2, x: 2, y: 2 })));
+    const eastLayer = requiredLayer(decode(encodeSyntheticTile({ z: 2, x: 3, y: 2 })));
+    const westGeometry = featureById(westLayer, 707).toGeoJSON(2, 2, 2).geometry;
+    const eastGeometry = featureById(eastLayer, 707).toGeoJSON(3, 2, 2).geometry;
+
+    if (
+      (westGeometry?.type !== "Polygon" && westGeometry?.type !== "MultiPolygon") ||
+      (eastGeometry?.type !== "Polygon" && eastGeometry?.type !== "MultiPolygon")
+    ) {
+      throw new Error("expected the boundary-crossing fixture to decode as polygonal geometries");
+    }
+    const westParts = westGeometry.type === "Polygon" ? [westGeometry.coordinates] : westGeometry.coordinates;
+    const eastParts = eastGeometry.type === "Polygon" ? [eastGeometry.coordinates] : eastGeometry.coordinates;
+    expect(westParts).toHaveLength(2);
+    expect(eastParts).toHaveLength(1);
+    const separateWestComponent = westParts.find((part) =>
+      part.flat().every((position) => position[0] >= 69.99 && position[0] <= 75.01),
+    );
+    expect(separateWestComponent).toBeDefined();
+
+    for (const part of [...westParts, ...eastParts]) {
+      expect(part).toHaveLength(1);
+      const ring = part[0];
+      expect(ring).toBeDefined();
+      expect(ring.length).toBeGreaterThanOrEqual(4);
+      expect(ring[0]).toEqual(ring.at(-1));
+    }
+    const westLongitudes = westParts.flat(2).map(([longitude]) => longitude);
+    const eastLongitudes = eastParts.flat(2).map(([longitude]) => longitude);
+    expect(westLongitudes.every((longitude) => longitude >= 0 && longitude <= 90.0001)).toBe(true);
+    expect(eastLongitudes.every((longitude) => longitude >= 89.9999 && longitude <= 100.01)).toBe(true);
+  });
+
   it("validates a candidate MapLibre style and its source-layer against the encoded tile", () => {
     expect(validateStyleMin(syntheticCandidateStyle)).toEqual([]);
 
@@ -196,10 +230,11 @@ describe("synthetic MVT candidate encode/decode", () => {
   it("keeps the fixture explicit, valid GeoJSON and synthetic", () => {
     const fixture = loadSyntheticFixture();
     expect(fixture.type).toBe("FeatureCollection");
-    expect(fixture.features).toHaveLength(6);
+    expect(fixture.features).toHaveLength(7);
     expect(fixture.features.every((feature) => feature.properties?.is_synthetic === true)).toBe(true);
     expect([...new Set(fixture.features.map((feature) => feature.geometry?.type))].sort()).toEqual([
       "LineString",
+      "MultiPolygon",
       "Point",
       "Polygon",
     ]);
