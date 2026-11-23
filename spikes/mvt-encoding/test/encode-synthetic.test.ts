@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { VectorTile, type VectorTileFeature, type VectorTileLayer } from "@mapbox/vector-tile";
 import { PbfReader } from "pbf";
+import { ZodError } from "zod";
 import { encodeSyntheticTile, loadSyntheticFixture } from "../src/encode-synthetic";
 
 function decode(bytes: Uint8Array): VectorTile {
@@ -266,13 +267,18 @@ describe("synthetic MVT candidate encode/decode", () => {
     ]);
   });
 
-  it("rejects invalid or out-of-range tile coordinates", () => {
-    expect(() => encodeSyntheticTile({ z: -1, x: 0, y: 0 })).toThrow(RangeError);
-    expect(() => encodeSyntheticTile({ z: 9, x: 0, y: 0 })).toThrow(RangeError);
-    expect(() => encodeSyntheticTile({ z: 2, x: 4, y: 0 })).toThrow(RangeError);
-    expect(() => encodeSyntheticTile({ z: 2, x: 1.5, y: 0 })).toThrow(RangeError);
-    expect(() => encodeSyntheticTile({ z: 2, x: 0, y: 4 })).toThrow(RangeError);
-    expect(() => encodeSyntheticTile({ z: 2, x: 0, y: 1.5 })).toThrow(RangeError);
-    expect(() => encodeSyntheticTile({ z: 2.5, x: 0, y: 0 })).toThrow(RangeError);
+  it("rejects invalid or out-of-range tile coordinates with Zod", () => {
+    expect(() => encodeSyntheticTile({ z: -1, x: 0, y: 0 })).toThrow(ZodError);
+    expect(() => encodeSyntheticTile({ z: 9, x: 0, y: 0 })).toThrow(ZodError);
+    expect(() => encodeSyntheticTile({ z: 2, x: 4, y: 0 })).toThrow(ZodError);
+    expect(() => encodeSyntheticTile({ z: 2, x: 1.5, y: 0 })).toThrow(ZodError);
+    expect(() => encodeSyntheticTile({ z: 2, x: 0, y: 4 })).toThrow(ZodError);
+    expect(() => encodeSyntheticTile({ z: 2, x: 0, y: 1.5 })).toThrow(ZodError);
+    expect(() => encodeSyntheticTile({ z: 2.5, x: 0, y: 0 })).toThrow(ZodError);
+    expect(() => encodeSyntheticTile({ z: Number.NaN, x: 0, y: 0 })).toThrow(ZodError);
+    expect(() => encodeSyntheticTile({ z: 2, x: -1, y: 0 })).toThrow(ZodError);
+    expect(() => encodeSyntheticTile({ z: 2, x: 0, y: -1 })).toThrow(ZodError);
+    const optionsWithUnknownKey = { z: 2, x: 2, y: 2, ignored: true };
+    expect(() => encodeSyntheticTile(optionsWithUnknownKey)).toThrow(ZodError);
   });
 });

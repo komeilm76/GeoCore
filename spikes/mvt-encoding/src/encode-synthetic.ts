@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import GeoJSONVT, { type LegacyTile } from "geojson-vt";
 import vtPbf from "vt-pbf";
 import type { FeatureCollection } from "geojson";
+import { z } from "zod";
 
 function parseFeatureCollection(value: unknown): FeatureCollection {
   if (
@@ -25,27 +26,39 @@ const parsedFixture: FeatureCollection = parseFeatureCollection(
   JSON.parse(readFileSync(fileURLToPath(fixturePath), "utf8")) as unknown,
 );
 
-export interface SyntheticTileOptions {
-  z?: number;
-  x?: number;
-  y?: number;
-}
+const SyntheticTileOptionsSchema = z
+  .object({
+    z: z.number().int().min(0).max(8).default(2),
+    x: z.number().int().nonnegative().default(2),
+    y: z.number().int().nonnegative().default(2),
+  })
+  .strict()
+  .superRefine(({ z, x, y }, context) => {
+    const worldSize = 2 ** z;
+    if (x >= worldSize) {
+      context.addIssue({
+        code: "custom",
+        path: ["x"],
+        message: `x must be in [0, ${worldSize - 1}]`,
+      });
+    }
+    if (y >= worldSize) {
+      context.addIssue({
+        code: "custom",
+        path: ["y"],
+        message: `y must be in [0, ${worldSize - 1}]`,
+      });
+    }
+  });
+
+export type SyntheticTileOptions = z.input<typeof SyntheticTileOptionsSchema>;
 
 /**
  * Encode the repository's synthetic fixture as one candidate MVT payload.
  * Non-production only: these settings and the z/x/y choice are not a GeoCore contract.
  */
-export function encodeSyntheticTile({ z = 2, x = 2, y = 2 }: SyntheticTileOptions = {}): Uint8Array {
-  if (!Number.isInteger(z) || z < 0 || z > 8) {
-    throw new RangeError("spike zoom must be an integer from 0 through 8");
-  }
-  const worldSize = 2 ** z;
-  if (!Number.isInteger(x) || x < 0 || x >= worldSize) {
-    throw new RangeError(`x must be an integer in [0, ${worldSize - 1}]`);
-  }
-  if (!Number.isInteger(y) || y < 0 || y >= worldSize) {
-    throw new RangeError(`y must be an integer in [0, ${worldSize - 1}]`);
-  }
+export function encodeSyntheticTile(options: SyntheticTileOptions = {}): Uint8Array {
+  const { z, x, y } = SyntheticTileOptionsSchema.parse(options);
 
   const index = new GeoJSONVT(parsedFixture, {
     maxZoom: 8,
