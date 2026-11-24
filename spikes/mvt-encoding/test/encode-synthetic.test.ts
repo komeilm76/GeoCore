@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import { VectorTile, type VectorTileFeature, type VectorTileLayer } from "@mapbox/vector-tile";
 import { PbfReader } from "pbf";
 import { ZodError } from "zod";
+import { validateStyleMin, type StyleSpecification } from "@maplibre/maplibre-gl-style-spec";
+import { syntheticCandidateStyle } from "../fixtures/synthetic-style";
 import { encodeSyntheticTile, loadSyntheticFixture, parseSyntheticFixture } from "../src/encode-synthetic";
 
 function decode(bytes: Uint8Array): VectorTile {
@@ -21,6 +23,30 @@ function featureById(layer: VectorTileLayer, id: number): VectorTileFeature {
     if (feature.id === id) return feature;
   }
   throw new Error(`expected feature ${id}`);
+}
+
+function collectGetProperties(value: unknown, output: Set<string>): void {
+  if (Array.isArray(value)) {
+    if (value[0] === "get" && typeof value[1] === "string") output.add(value[1]);
+    for (const child of value) collectGetProperties(child, output);
+  } else if (typeof value === "object" && value !== null) {
+    for (const child of Object.values(value)) collectGetProperties(child, output);
+  }
+}
+
+function unresolvedStyleProperties(style: StyleSpecification, layer: VectorTileLayer): string[] {
+  const available = new Set<string>();
+  for (let index = 0; index < layer.length; index += 1) {
+    for (const key of Object.keys(layer.feature(index).properties)) available.add(key);
+  }
+
+  const referenced = new Set<string>();
+  for (const styleLayer of style.layers) {
+    if ("source-layer" in styleLayer && styleLayer["source-layer"] === layer.name) {
+      collectGetProperties(styleLayer, referenced);
+    }
+  }
+  return [...referenced].filter((property) => !available.has(property)).sort();
 }
 
 function candidateTileBounds(z: number, x: number, y: number) {
@@ -217,6 +243,57 @@ describe("synthetic MVT candidate encode/decode", () => {
     const eastLongitudes = eastParts.flat(2).map(([longitude]) => longitude);
     expect(westLongitudes.every((longitude) => longitude >= 0 && longitude <= 90.0001)).toBe(true);
     expect(eastLongitudes.every((longitude) => longitude >= 89.9999 && longitude <= 100.01)).toBe(true);
+  });
+
+  it("validates a candidate MapLibre style and matches its source layer to the encoded tile", () => {
+    expect(validateStyleMin(syntheticCandidateStyle)).toEqual([]);
+
+    const layer = requiredLayer(decode(encodeSyntheticTile()));
+    expect(unresolvedStyleProperties(syntheticCandidateStyle, layer)).toEqual([]);
+    const sourceLayers = syntheticCandidateStyle.layers.filter(
+      (styleLayer) => "source" in styleLayer && styleLayer.source === "synthetic",
+    );
+    expect(sourceLayers).toHaveLength(4);
+    expect(
+      sourceLayers.every((styleLayer) =>
+        "source-layer" in styleLayer && styleLayer["source-layer"] === layer.name,
+      ),
+    ).toBe(true);
+
+    const labelLayer = sourceLayers.find((styleLayer) => styleLayer.type === "symbol");
+    if (!labelLayer || labelLayer.type !== "symbol") {
+      throw new Error("expected a candidate symbol layer");
+    }
+    expect(labelLayer.layout["text-field"]).toEqual([
+      "coalesce",
+      ["get", "name:fa"],
+      ["get", "name:en"],
+    ]);
+    expect(featureById(layer, 101).properties["name:fa"]).toBe("نقطه آزمایشی");
+    expect(featureById(layer, 101).properties["name:en"]).toBe("Synthetic point");
+  });
+
+  it("detects a style property missing from the encoded tile", () => {
+    const invalidPropertyStyle = {
+      ...syntheticCandidateStyle,
+      layers: syntheticCandidateStyle.layers.map((styleLayer) =>
+        styleLayer.id === "synthetic-label" && styleLayer.type === "symbol"
+          ? { ...styleLayer, layout: { ...styleLayer.layout, "text-field": ["get", "name:missing"] } }
+          : styleLayer,
+      ),
+    } as unknown as StyleSpecification;
+    const layer = requiredLayer(decode(encodeSyntheticTile()));
+
+    // Style-spec permits arbitrary feature-property keys; the candidate cross-check is separate.
+    expect(validateStyleMin(invalidPropertyStyle)).toEqual([]);
+    expect(unresolvedStyleProperties(invalidPropertyStyle, layer)).toEqual(["name:missing"]);
+  });
+
+  it("rejects an invalid style version with the MapLibre validator", () => {
+    const invalidStyle = { ...syntheticCandidateStyle, version: 99 } as unknown as Parameters<
+      typeof validateStyleMin
+    >[0];
+    expect(validateStyleMin(invalidStyle).length).toBeGreaterThan(0);
   });
 
   it("keeps the complete synthetic fixture in a candidate z-zero world tile", () => {

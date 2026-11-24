@@ -19,6 +19,10 @@ Document `in scope`, `not in scope (with rationale)`, or `unresolved`; unresolve
 
 For every base, derived, reference and user-supplied dataset, retain the exact source, license/version, acquisition date/method, permitted purpose, redistribution, attribution, database/derivative obligations, combination analysis, retention/deletion and owner. Assess OpenStreetMap ODbL and public-service usage policies separately; using an API or tile endpoint does not automatically license all downstream use. Obtain counsel review for ambiguous derivative database, output, combination, hosted/self-hosted or offline-package questions. Keep software dependency licenses/SBOM and notices alongside release evidence.
 
+## Open dependency-license item: MapLibre style-spec
+
+The MVT spike uses `@maplibre/maplibre-gl-style-spec` 26.9.0 as a development dependency by owner direction. A discrepancy remains between npm/package metadata (ISC), the README badge (BSD-3-Clause), and the distributed license file (BSD-3-Clause terms plus a legacy Mapbox section). This is recorded as an unresolved compliance item pending authoritative clarification from MapLibre. Development is proceeding as directed; this is not a legal conclusion, permission, clearance, or release approval. Retain the exact package version and license materials, seek clarification, and complete applicable qualified review before any release decision that relies on the dependency. Do not describe the discrepancy as resolved.
+
 ## Personal location and user rights
 
 Before location history, live sharing or proximity processing: document purpose, data controller/processor allocation, legal basis, notices, recipient scope, accuracy/minimization, retention, deletion, access and portability/correction where applicable, handling of withdrawal/objection, complaint path and breach response. Consent is not assumed to be the only or always appropriate legal basis. Sharing without an end time is not unlimited retention or blanket consent. Assess whether a DPIA or other prior consultation is required.

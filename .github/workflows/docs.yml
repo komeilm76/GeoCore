@@ -28,7 +28,7 @@ jobs:
       - name: Install and check tile-matrix spike
         run: bun install --frozen-lockfile && bun run check
         working-directory: spikes/tile-matrix
-      - name: Install and check MVT encode/decode spike
+      - name: Install and check MVT encode/decode and MapLibre style-spec spike
         run: bun install --frozen-lockfile && bun run check
         working-directory: spikes/mvt-encoding
       - name: Audit MVT spike full dependency tree
