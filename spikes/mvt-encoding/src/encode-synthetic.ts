@@ -5,6 +5,7 @@ import vtPbf from "vt-pbf";
 import type { FeatureCollection } from "geojson";
 import { z } from "zod";
 
+/** Strict validation for this checked-in fixture subset, not a general-purpose GeoJSON or product API schema. */
 const PositionSchema = z.array(z.number()).min(2);
 const LinearRingSchema = z
   .array(PositionSchema)

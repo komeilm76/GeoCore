@@ -284,22 +284,25 @@ describe("synthetic MVT candidate encode/decode", () => {
     expect(point?.properties?.metadata).toEqual(nestedProperties);
   });
 
-  it("rejects an open polygon ring in a synthetic fixture with Zod", () => {
-    const malformedFixture = {
-      type: "FeatureCollection",
-      features: [
-        {
-          type: "Feature",
-          id: 1,
-          properties: { is_synthetic: true },
-          geometry: {
-            type: "Polygon",
-            coordinates: [[[0, 0], [1, 0], [1, 1], [0, 1]]],
+  it("rejects open rings in Polygon and MultiPolygon fixtures with Zod", () => {
+    const openRing = [[0, 0], [1, 0], [1, 1], [0, 1]];
+    for (const geometry of [
+      { type: "Polygon", coordinates: [openRing] },
+      { type: "MultiPolygon", coordinates: [[openRing]] },
+    ]) {
+      const malformedFixture = {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            id: 1,
+            properties: { is_synthetic: true },
+            geometry,
           },
-        },
-      ],
-    };
-    expect(() => parseSyntheticFixture(malformedFixture)).toThrow(ZodError);
+        ],
+      };
+      expect(() => parseSyntheticFixture(malformedFixture)).toThrow(ZodError);
+    }
   });
 
   it("rejects invalid or out-of-range tile coordinates with Zod", () => {
